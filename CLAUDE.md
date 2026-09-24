@@ -54,6 +54,7 @@ python -m qm universe                     # build ticker list (cached)
 python -m qm prices [--refresh]           # download or load prices (cached)
 python -m qm edgar [--refresh]            # download companyfacts (cached, rate limited)
 python -m qm fundamentals                 # build point in time table
+python -m qm panel                        # build the price panel from the cache (offline)
 python -m qm insample --strategy D        # Phase 3
 python -m qm walkforward --strategy D     # Phase 4
 python -m qm sensitivity --strategy D     # Phase 4
@@ -62,7 +63,9 @@ python -m qm report                       # Phase 6
 python -m qm signals                      # Phase 6
 ```
 
-(Commands are the plan; they get built phase by phase.)
+Add `--synthetic` before any command to run it on the fake market under
+`synthetic/` (never touches real data, trials or the holdout lock):
+`python -m qm --synthetic synthetic` builds it.
 
 ## Conventions
 
@@ -86,5 +89,8 @@ python -m qm signals                      # Phase 6
 ## Status
 
 - Phase 0 (plan): done
-- Phase 1 (data): not started. Blocked until the network policy allows
+- Phases 1 to 6: code built and tested on fake data (tests use no network).
+  Real data runs are blocked until the network policy allows
   finance.yahoo.com hosts, stooq.com, sec.gov hosts, en.wikipedia.org.
+- No real results exist yet. results/ has no trials.csv and the real holdout
+  is untouched.

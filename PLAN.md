@@ -206,11 +206,14 @@ All long only. Universe notes are in the table.
 | A3 | Multi asset trend | SPY, EFA, EEM, VNQ, GLD, DBC | Each asset above its 200d SMA | Its slice goes to IEF when below | equal slices | Faber 2007 |
 | B | RSI(2) pullback | stocks | RSI(2) < 10 and close > 200d SMA | Close > 5d SMA, or 10 days | 10 slots, 10% each; lowest RSI first if more signals than slots | Connors |
 | C | Donchian breakout | ETFs (default), stocks as a variant | Close at new 55 day high | Close at new 20 day low | risk 1% of equity per 1 ATR(20), cap 20% per name | Turtle rules |
-| D | 12-1 momentum | stocks | Return from t-252 to t-21 | Monthly, last trading day | top 10%, equal weight | Jegadeesh & Titman 1993 |
-| E | PEAD | stocks with XBRL EPS | SUE = (EPS_q - EPS_q-4) / std(last 8 such surprises) | Buy the open after the filing date, hold 60 trading days | top 10% of SUE vs trailing cross section, equal weight per position, max 5% | Bernard & Thomas 1989 |
+| D | 12-1 momentum | stocks | Return from t-252 to t-21 | Monthly, first trading day of the month | top 10%, equal weight | Jegadeesh & Titman 1993 |
+| E | PEAD | stocks with XBRL EPS | SUE = (EPS_q - EPS_q-4) / std(last 8 such surprises) | Buy the open after the filing date, hold 60 trading days | top 10% of SUE vs trailing cross section, 1/50 of equity each, at most 50 open | Bernard & Thomas 1989 |
 | F | Gross profitability | stocks with XBRL data, financials dropped | (Revenue - COGS) / Total assets, latest annual values filed by t | Monthly | top 20%, equal weight | Novy Marx 2013 |
 
 Notes:
+- D and F rebalance on the FIRST trading day of each month. Knowing that a day
+  is the LAST of the month needs tomorrow's date, which the look ahead check
+  flags. The first day uses only the past.
 - E's "top 10%" needs a cutoff that doesn't peek at future filings. I'll rank
   each new SUE against all SUEs filed in the trailing 365 days.
 - F drops banks, insurers and REITs (they mostly lack a cost of revenue line),
@@ -242,6 +245,16 @@ time and all together. If the result falls apart, it was probably luck.
 **Look ahead check.** For each strategy: build signals on the full data, then
 on data cut off at a random day T. Signals up to T must match exactly. Any
 difference means the strategy peeks.
+
+**Equal weight universe baseline.** Stock strategies are also compared with
+owning every stock in the universe equally, rebalanced monthly. With today's
+members only, that basket is inflated by survivorship. A stock strategy that
+beats SPY but not this basket shows no skill beyond survivorship.
+
+**Null test on fake data.** `python -m qm --synthetic ...` runs every phase on
+random walk prices and random filings. Nothing should beat the baseline there.
+A test also plants a real momentum edge in fake data and checks the tool finds
+it, so a "nothing works" answer on real data means something.
 
 **Too good flags (rule 9).** `sanity.py` flags Sharpe above 2, win rate above
 70%, very smooth equity (R squared of log equity vs time above 0.98), or max
@@ -310,10 +323,10 @@ Strategies (Phase 3)
 ## 10. Open questions and things I'm unsure about
 
 1. **Network access.** Yahoo, Stooq, SEC and Wikipedia are blocked in this
-   environment right now. Phase 1 can't run until they are allowed.
-2. **Strategy C universe.** The prompt doesn't say. Turtle rules were built for
-   a mix of futures markets, so ETFs are the closer match and avoid
-   survivorship bias. Default: ETFs, with a stock version as a counted variant.
+   environment right now. All code is built and tested on fake data; real runs
+   wait until those hosts are allowed.
+2. **Strategy C universe.** Decided: ETFs by default (closer to the Turtle
+   setup, no survivorship bias), stocks as a counted variant C_stocks.
 3. **Cash rate.** Cash earns 0% and Sharpe uses a 0% risk free rate. This is
    simple and a bit harsh on strategies that sit in cash (B, C). A T-bill rate
    could be added later.
@@ -326,3 +339,12 @@ Strategies (Phase 3)
 7. **Rebalance timing for A.** The prompt says daily checks. Monthly checks
    (Faber's version) trade less. I'll use daily as the default and test monthly
    as a counted variant in Phase 4.
+8. **Holdout settings.** Two settings per strategy are fixed in
+   `results/phase4/final_settings.json` before the holdout is loaded: the paper
+   defaults, and the best development Sharpe from the grid. Both run in the one
+   holdout run. The report leads with the defaults.
+9. **Walk forward test years start fresh.** A, D and F restate their current
+   portfolio on the first day. B, C and E start flat each year and miss trades
+   already open, which slightly understates them.
+10. **E sizing.** Each position is 1/50 of equity. With about 500 stocks that is
+    roughly fully invested; the report shows average exposure so you can see it.

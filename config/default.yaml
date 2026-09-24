@@ -1,0 +1,146 @@
+# All settings live here. Strategy code has no magic numbers.
+
+paths:
+  data_dir: data
+  results_dir: results
+
+dates:
+  data_start: "2005-01-01"
+  insample_end: "2015-12-31"     # Phase 3 looks only at data up to here
+  wf_first_test_year: 2016       # walk forward test years start here
+  holdout_years: 2               # last N years of the snapshot are locked
+  snapshot_end: null             # set to the last close once real data is frozen
+
+costs:
+  commission_bps: 10             # per side
+  slippage_bps: 5                # per side
+
+engine:
+  initial_capital: 1000000.0
+  cash_rate: 0.0                 # annual rate earned on idle cash
+  risk_free: 0.0                 # annual rate used in Sharpe
+
+universe:
+  benchmark: SPY
+  etfs: [SPY, QQQ, IWM, EFA, EEM, TLT, IEF, GLD, DBC, VNQ,
+         XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
+  sp500_url: "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+  ndx_url: "https://en.wikipedia.org/wiki/Nasdaq-100"
+  # F drops these sectors, as in Novy Marx (2013)
+  financial_sectors: ["Financials", "Real Estate"]
+
+data_quality:
+  min_history_days: 260          # shorter series are skipped
+  max_internal_gaps: 0           # missing days inside a series; above this, skip
+  bad_jump: 0.5                  # one day move above this that reverses = bad data
+  bad_jump_reversal: 0.3
+
+edgar:
+  # SEC asks for a real name and email. Set QM_SEC_USER_AGENT in your shell,
+  # for example: export QM_SEC_USER_AGENT="Jane Doe jane@example.com"
+  user_agent_env: QM_SEC_USER_AGENT
+  max_requests_per_sec: 8
+  tickers_url: "https://www.sec.gov/files/company_tickers.json"
+  facts_url: "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
+
+prices:
+  sleep_between_downloads: 0.3   # be polite to yfinance
+
+fundamentals:
+  tags:
+    eps: [EarningsPerShareDiluted, EarningsPerShareBasic]
+    revenue: [Revenues, RevenueFromContractWithCustomerExcludingAssessedTax,
+              SalesRevenueNet, SalesRevenueGoodsNet,
+              RevenueFromContractWithCustomerIncludingAssessedTax]
+    cogs: [CostOfRevenue, CostOfGoodsAndServicesSold, CostOfGoodsSold,
+           CostOfGoodsSoldExcludingDepreciationDepletionAndAmortization]
+    gross_profit: [GrossProfit]
+    assets: [Assets]
+  forms: ["10-Q", "10-K", "10-Q/A", "10-K/A"]
+  quarter_days: [80, 100]        # a period this long counts as a quarter
+  annual_days: [350, 380]
+
+sanity:
+  max_sharpe: 2.0
+  max_win_rate: 0.70
+  max_smoothness_r2: 0.98        # R squared of log equity vs time
+  min_maxdd_long: 0.05           # max drawdown under this over 5+ years is suspicious
+
+strategies:
+  A1:
+    kind: trend_sma
+    universe: etf
+    asset: SPY
+    safe: IEF
+    sma: 200
+    check: daily                 # daily or monthly
+  A2:
+    kind: trend_cross
+    universe: etf
+    asset: SPY
+    safe: IEF
+    fast: 50
+    slow: 200
+  A3:
+    kind: trend_multi
+    universe: etf
+    assets: [SPY, EFA, EEM, VNQ, GLD, DBC]
+    safe: IEF
+    sma: 200
+  B:
+    kind: meanrev
+    universe: stocks
+    rsi_len: 2
+    rsi_entry: 10
+    trend_sma: 200
+    exit_sma: 5
+    max_hold: 10
+    slots: 10
+  C:
+    kind: breakout
+    universe: etf
+    entry: 55
+    exit: 20
+    atr: 20
+    risk_per_trade: 0.01
+    max_weight: 0.20
+  C_stocks:
+    kind: breakout
+    universe: stocks
+    entry: 55
+    exit: 20
+    atr: 20
+    risk_per_trade: 0.01
+    max_weight: 0.20
+  D:
+    kind: momentum
+    universe: stocks
+    lookback: 252
+    skip: 21
+    top_frac: 0.10
+  E:
+    kind: pead
+    universe: stocks
+    n_surprises: 8
+    hold: 60
+    top_frac: 0.10
+    rank_window_days: 365
+    min_rank_pool: 50
+    max_positions: 50
+  F:
+    kind: grossprof
+    universe: stocks
+    top_frac: 0.20
+    max_staleness_days: 450
+
+# Phase 4 grids: each lookback moved 20% down and up.
+grids:
+  A1: {sma: [160, 200, 240], check: [daily, monthly]}
+  A2: {fast: [40, 50, 60], slow: [160, 200, 240]}
+  A3: {sma: [160, 200, 240]}
+  B: {trend_sma: [160, 200, 240], exit_sma: [4, 5, 6], max_hold: [8, 10, 12]}
+  C: {entry: [44, 55, 66], exit: [16, 20, 24], atr: [16, 20, 24]}
+  C_stocks: {entry: [44, 55, 66], exit: [16, 20, 24]}
+  D: {lookback: [202, 252, 302], skip: [17, 21, 25]}
+  E: {hold: [48, 60, 72], n_surprises: [6, 8, 10]}
+  F: {top_frac: [0.16, 0.20, 0.24]}
