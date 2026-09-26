@@ -1,7 +1,7 @@
-data/
+/data/
 __pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
 .venv/
-synthetic/
+/synthetic/
