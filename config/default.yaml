@@ -25,7 +25,7 @@ universe:
   etfs: [SPY, QQQ, IWM, EFA, EEM, TLT, IEF, GLD, DBC, VNQ,
          XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
   sp500_url: "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-  ndx_url: "https://en.wikipedia.org/wiki/Nasdaq-100"
+  ndx_url: "https://en.wikipedia.org/wiki/List_of_NASDAQ-100_companies"
   # F drops these sectors, as in Novy Marx (2013)
   financial_sectors: ["Financials", "Real Estate"]
 
