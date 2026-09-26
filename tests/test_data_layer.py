@@ -111,3 +111,42 @@ def test_edgar_refuses_without_user_agent(cfg, monkeypatch):
     monkeypatch.delenv("QM_SEC_USER_AGENT", raising=False)
     with pytest.raises(RuntimeError):
         EdgarClient(cfg)
+
+
+Q = {"min_history_days": 10, "max_internal_gaps": 0, "bad_jump": 0.5, "bad_jump_reversal": 0.3,
+     "min_clean_run": 60, "big_distribution": 0.10, "max_event_move": 0.25}
+
+
+def test_leading_copied_prices_are_cut_and_inner_ones_are_gaps():
+    from qm.data.quality import trim_leading_stale
+    df = ohlcv(400)
+    df.iloc[1:100, df.columns.get_loc("close")] = df["close"].iloc[0]   # fake flat history
+    df.iloc[:100, df.columns.get_loc("volume")] = 0
+    out, filled, cut = trim_leading_stale(df, 60)
+    assert cut == 100 and filled == 0 and out.index[0] == df.index[100]
+    df.iloc[250, df.columns.get_loc("close")] = df["close"].iloc[249]   # one copied day inside real trading
+    df.iloc[250, df.columns.get_loc("volume")] = 0
+    _, filled, _ = trim_leading_stale(df, 60)
+    assert filled == 1
+
+
+def test_broken_spin_off_adjustment_is_caught():
+    # DHR style: Yahoo books a spin off as a huge "dividend" and the adjusted
+    # series jumps +61% while the stock itself barely moved.
+    from qm.data.quality import check_adjustments
+    adj = ohlcv(300)
+    adj.iloc[:150, :4] /= 1.61
+    unadj = pd.DataFrame({"close_raw": adj["close"] * 1.0, "adj_close": adj["close"],
+                          "dividends": 0.0, "splits": 0.0}, index=adj.index)
+    unadj.iloc[:150, 0] = adj["close"].iloc[:150] * 1.61
+    unadj.iloc[150, unadj.columns.get_loc("dividends")] = 0.35 * unadj["close_raw"].iloc[149]
+    assert "broken adjustment" in check_adjustments(adj, unadj, Q)
+
+
+def test_correct_special_dividend_adjustment_passes():
+    from qm.data.quality import check_adjustments
+    adj = ohlcv(300)
+    unadj = pd.DataFrame({"close_raw": adj["close"], "adj_close": adj["close"], "dividends": 0.0, "splits": 0.0}, index=adj.index)
+    unadj.iloc[150, unadj.columns.get_loc("dividends")] = 0.2 * unadj["close_raw"].iloc[149]
+    assert check_adjustments(adj, unadj, Q) is None
+    assert "no unadjusted" in check_adjustments(adj, None, Q)

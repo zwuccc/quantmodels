@@ -15,18 +15,23 @@ def cmd_universe(cfg, a):
 
 
 def cmd_prices(cfg, a):
-    from qm.data.prices import PriceStore
+    from qm.data.prices import UNADJ_COLS, PriceStore, fetch_yfinance_unadjusted
     uni = pd.read_csv(data_dir(cfg) / "processed" / "tickers.csv")
-    store = PriceStore(cfg)
-    print(store.download_all(uni["ticker"].tolist(), refresh=a.refresh))
+    print("adjusted prices:", flush=True)
+    print(PriceStore(cfg).download_all(uni["ticker"].tolist(), refresh=a.refresh), flush=True)
+    print("unadjusted prices and corporate actions (for the adjustment audit):", flush=True)
+    audit = PriceStore(cfg, fetchers=[("yfinance", fetch_yfinance_unadjusted)], subdir="prices_unadj", cols=UNADJ_COLS)
+    print(audit.download_all(uni["ticker"].tolist(), refresh=a.refresh), flush=True)
 
 
 def cmd_panel(cfg, a):
     from qm.data.prices import PriceStore, build_panel
     from qm.research.common import panel_path
     uni = pd.read_csv(data_dir(cfg) / "processed" / "tickers.csv")
+    from qm.data.prices import UNADJ_COLS
     store = PriceStore(cfg, fetchers=[])  # offline: cache only
-    panel = build_panel(store, uni["ticker"].tolist(), cfg["universe"]["benchmark"])
+    audit = PriceStore(cfg, fetchers=[], subdir="prices_unadj", cols=UNADJ_COLS)
+    panel = build_panel(store, uni["ticker"].tolist(), cfg["universe"]["benchmark"], audit)
     for f, df in panel.items():
         df.to_parquet(panel_path(cfg, f))
     c = panel["close"]

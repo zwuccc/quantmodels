@@ -34,6 +34,9 @@ data_quality:
   max_internal_gaps: 0           # missing days inside a series; above this, skip
   bad_jump: 0.5                  # one day move above this that reverses = bad data
   bad_jump_reversal: 0.3
+  min_clean_run: 60              # real history starts at the first 60 days with no copied prices
+  big_distribution: 0.10         # a "dividend" above 10% of price is how Yahoo books a spin off
+  max_event_move: 0.25           # adjusted move above this on a split or spin off day = broken adjustment
 
 edgar:
   # SEC asks for a real name and email. Set QM_SEC_USER_AGENT in your shell,
