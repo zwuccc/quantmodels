@@ -9,7 +9,7 @@ dates:
   insample_end: "2015-12-31"     # Phase 3 looks only at data up to here
   wf_first_test_year: 2016       # walk forward test years start here
   holdout_years: 2               # last N years of the snapshot are locked
-  snapshot_end: null             # set to the last close once real data is frozen
+  snapshot_end: "2026-09-25"     # frozen: last close of the Phase 1 download. Holdout = the 2 years before it
 
 costs:
   commission_bps: 10             # per side

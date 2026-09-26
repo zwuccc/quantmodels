@@ -90,7 +90,9 @@ Add `--synthetic` before any command to run it on the fake market under
 
 - Phase 0 (plan): done
 - Phases 1 to 6: code built and tested on fake data (tests use no network).
-  Real data runs are blocked until the network policy allows
-  finance.yahoo.com hosts, stooq.com, sec.gov hosts, en.wikipedia.org.
-- No real results exist yet. results/ has no trials.csv and the real holdout
-  is untouched.
+- Phase 1 real data, prices: done. 539 tickers downloaded from Yahoo (Stooq
+  hangs up on this cloud host; not needed so far). Panel: 514 tickers,
+  2005-01-03 to 2026-09-25. Skips and trims in results/phase1/price_skips.csv.
+  Snapshot frozen at 2026-09-25, so the holdout is 2024-09-26 to 2026-09-25.
+- Phase 1 real data, SEC fundamentals: waiting for QM_SEC_USER_AGENT.
+- No strategy has been run on real data yet. The real holdout is untouched.
