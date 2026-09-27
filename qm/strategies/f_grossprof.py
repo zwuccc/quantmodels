@@ -14,7 +14,7 @@ def grossprof(md: MarketData, p: dict) -> pd.DataFrame:
     sec = md.sector()
     fin = set(p.get("financial_sectors", ["Financials", "Real Estate"]))
     names = [t for t in md.tickers("stocks") if sec.get(t, "") not in fin]
-    gp = annual_gross_profitability(md.fundamentals)
+    gp = annual_gross_profitability(md.fundamentals, tuple(p["gpa_bounds"]) if "gpa_bounds" in p else None)
     gp = gp[gp["ticker"].isin(names)]
     C = md.close[names]
     dates = C.index[month_start(C.index)]

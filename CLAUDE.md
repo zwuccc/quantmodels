@@ -94,5 +94,10 @@ Add `--synthetic` before any command to run it on the fake market under
   hangs up on this cloud host; not needed so far). Panel: 514 tickers,
   2005-01-03 to 2026-09-25. Skips and trims in results/phase1/price_skips.csv.
   Snapshot frozen at 2026-09-25, so the holdout is 2024-09-26 to 2026-09-25.
-- Phase 1 real data, SEC fundamentals: waiting for QM_SEC_USER_AGENT.
+- Phase 1 real data, SEC fundamentals: done. companyfacts for all 518 stocks.
+  Point in time table: first filed value per period (8.3% of periods were
+  later restated). Dropped: rows filed before their period ended, GP/A outside
+  -1..3, SUE above 50 in size. Coverage in results/phase1/.
+- Open question for the user: rule 8 strictness (17 names skipped for 1 to 8
+  copied price days). Default stays strict until they decide.
 - No strategy has been run on real data yet. The real holdout is untouched.

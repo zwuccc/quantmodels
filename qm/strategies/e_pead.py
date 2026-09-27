@@ -13,8 +13,10 @@ from qm.data.market import MarketData
 def pead(md: MarketData, p: dict) -> pd.DataFrame:
     names = md.tickers("stocks")
     cal = md.calendar
-    ev = sue_events(md.fundamentals, p["n_surprises"])
-    ev = ev[ev["ticker"].isin(names)].sort_values(["filed", "ticker"]).reset_index(drop=True)
+    ev = sue_events(md.fundamentals, p["n_surprises"], p.get("min_sue_sd", 0.0))
+    ev = ev[ev["ticker"].isin(names)]
+    ev = ev[ev["sue"].abs() <= p.get("max_abs_sue", np.inf)]  # e.g. HIG 2014 Q4 EPS filed as 860000
+    ev = ev.sort_values(["filed", "ticker"]).reset_index(drop=True)
     empty = pd.DataFrame(columns=names, dtype=float)
     if ev.empty:
         return empty

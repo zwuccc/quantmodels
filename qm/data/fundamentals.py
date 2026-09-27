@@ -50,6 +50,7 @@ def build_pit(rows: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     """First filed value per period, best tag per period, periods classified."""
     if rows.empty:
         return pd.DataFrame(columns=PIT_COLS)
+    rows = rows[~(rows["filed"] < rows["end"])]  # filed before its own period ended: a typo in the filing
     df = rows.sort_values(["filed", "accn"])
     key = ["ticker", "concept", "tag", "start", "end"]
     df = df.drop_duplicates(subset=key, keep="first")  # first filed wins
@@ -119,12 +120,14 @@ def load_fundamentals(cfg: dict) -> Fundamentals:
 
 # ---- signal inputs built from the PIT table -------------------------------
 
-def sue_events(fund: Fundamentals, n_surprises: int) -> pd.DataFrame:
+def sue_events(fund: Fundamentals, n_surprises: int, min_sd: float = 0.0) -> pd.DataFrame:
     """Standardized unexpected earnings, one row per quarterly EPS filing.
 
     surprise_q = EPS_q - EPS_(same quarter last year)
     SUE_q = surprise_q / std(previous n_surprises surprises)   (current one excluded)
     The event date is when both EPS values were public (the later filed date).
+    min_sd floors the standard deviation: EPS is reported to the cent, so a
+    spread below a cent is rounding noise, not a real baseline.
     """
     t = fund.table
     q = t[(t["concept"] == "eps") & (t["period"] == "Q")].sort_values(["ticker", "end"])
@@ -153,15 +156,17 @@ def sue_events(fund: Fundamentals, n_surprises: int) -> pd.DataFrame:
             sd = np.std([p[2] for p in prev], ddof=1)
             if not np.isfinite(sd) or sd <= 0:
                 continue
+            sd = max(sd, min_sd)
             out.append({"ticker": tk, "end": pd.Timestamp(end), "filed": pd.Timestamp(avail), "sue": s / sd})
     return pd.DataFrame(out, columns=["ticker", "end", "filed", "sue"])
 
 
-def annual_gross_profitability(fund: Fundamentals) -> pd.DataFrame:
+def annual_gross_profitability(fund: Fundamentals, bounds: tuple[float, float] | None = None) -> pd.DataFrame:
     """(Revenue - cost of revenue) / total assets, one row per annual filing.
 
     Uses the GrossProfit tag when a company reports it, else revenue minus
     cost of revenue from the same annual period. Missing pieces mean no row.
+    Values outside bounds are unit or tagging errors in the filing and are dropped.
     """
     t = fund.table
     ann = t[t["period"] == "A"]
@@ -179,4 +184,6 @@ def annual_gross_profitability(fund: Fundamentals) -> pd.DataFrame:
     m = m[m["assets"] > 0]
     m["filed"] = m[["f_gross", "f_assets"]].max(axis=1)
     m["gpa"] = m["gross"] / m["assets"]
+    if bounds is not None:
+        m = m[m["gpa"].between(*bounds)]
     return m[["ticker", "end", "filed", "gpa"]].sort_values(["ticker", "filed"]).reset_index(drop=True)

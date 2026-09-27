@@ -98,3 +98,14 @@ def test_sue_uses_only_filed_data():
     cut = ev["filed"].iloc[len(ev) // 2]
     ev2 = sue_events(f.clip(cut), 8)
     pd.testing.assert_frame_equal(ev[ev["filed"] <= cut].reset_index(drop=True), ev2.reset_index(drop=True))
+
+
+def test_row_filed_before_its_period_ended_is_dropped(cfg):
+    facts = {"facts": {"us-gaap": {"Assets": {"units": {"USD": [
+        fact(None, "2009-12-31", 100.0, "10-Q", "2009-11-02", "typo")]}}}}}
+    assert build_pit(extract_rows(facts, "ROP", cfg), cfg).empty
+
+
+def test_gross_profitability_outside_bounds_is_dropped(fund):
+    assert len(annual_gross_profitability(fund, (-1.0, 3.0))) == 1
+    assert annual_gross_profitability(fund, (-1.0, 0.1)).empty   # 0.2 is outside

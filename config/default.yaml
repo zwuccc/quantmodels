@@ -130,11 +130,14 @@ strategies:
     rank_window_days: 365
     min_rank_pool: 50
     max_positions: 50
+    min_sue_sd: 0.01             # EPS is reported to the cent; a smaller spread is rounding noise
+    max_abs_sue: 50              # above this is a filing error or one off (99% of real SUEs are within 6.3)
   F:
     kind: grossprof
     universe: stocks
     top_frac: 0.20
     max_staleness_days: 450
+    gpa_bounds: [-1.0, 3.0]      # outside this is a unit or tagging error (99% of real values are below 1.2)
 
 # Phase 4 grids: each lookback moved 20% down and up.
 grids:
