@@ -98,6 +98,13 @@ Add `--synthetic` before any command to run it on the fake market under
   Point in time table: first filed value per period (8.3% of periods were
   later restated). Dropped: rows filed before their period ended, GP/A outside
   -1..3, SUE above 50 in size. Coverage in results/phase1/.
-- Open question for the user: rule 8 strictness (17 names skipped for 1 to 8
-  copied price days). Default stays strict until they decide.
-- No strategy has been run on real data yet. The real holdout is untouched.
+- Rule 8 (user said use best judgement): up to 5 missing or copied days per
+  name are left blank, never filled. More than 5 means skip. 531 tickers pass.
+- Phases 3 and 4 done on real data. Two look ahead leaks in E and F found by
+  the truncation check and fixed. Added dated universe variants (a stock counts
+  only from its S&P 500 join date) as a survivorship check.
+- Phase 5 done: holdout used ONCE (see results/holdout_record.json). Do not
+  rerun it and do not tune anything on its results.
+- Phase 6 done: results/report.html, results/signals_latest.csv.
+- Finding: nothing clearly holds up. Plain momentum (D) is mostly
+  survivorship; its dated version is mixed. Everything else lost to SPY or is mixed.

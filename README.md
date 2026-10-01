@@ -11,10 +11,15 @@ Research only. No broker code, no orders.
 
 ## Status
 
-All code is written and tested (`pytest -q`, 53 tests, no network). It has
-only been run end to end on a fake random walk market, because the build
-environment couldn't reach Yahoo, Stooq, SEC or Wikipedia. **There are no real
-results yet.**
+All phases have run on real data (Yahoo prices 2005 to 2026-09-25, SEC XBRL
+fundamentals). The holdout (2024-09-26 to 2026-09-25) has been used once.
+
+- Report: [results/report.html](results/report.html)
+- Paper signals as of the latest close: [results/signals_latest.csv](results/signals_latest.csv)
+- Every setting tried: [results/trials.csv](results/trials.csv)
+
+Bottom line: none of the strategies clearly beats buying SPY once costs,
+multiple testing, out of sample data and survivorship are accounted for.
 
 ## Run it on real data
 

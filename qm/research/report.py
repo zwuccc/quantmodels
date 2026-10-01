@@ -21,18 +21,18 @@ from qm.research.common import (ORDER, SURVIVORSHIP_WARNING, SYNTHETIC_WARNING, 
                                 research_view, run_window)
 from qm.strategies import build_targets, uses_single_stocks
 
-MAIN = ["A1", "B", "C", "D", "E", "F"]          # one line each on the main chart
+MAIN = ["A1", "B", "C", "D", "D_dated", "E", "F"]  # one line each on the main chart
 VARIANTS = {"A2": "A1", "A3": "A1", "C_stocks": "C", "B_dated": "B", "C_stocks_dated": "C",
-            "D_dated": "D", "E_dated": "E", "F_dated": "F"}  # small multiples, family color
+            "E_dated": "E", "F_dated": "F"}  # small multiples, family color
 NAMES = {
     "A1": "A1 · 200 day trend (SPY/IEF)", "A2": "A2 · 50/200 cross (SPY/IEF)",
     "A3": "A3 · Multi asset trend", "B": "B · RSI(2) mean reversion", "C": "C · Breakout on ETFs",
     "C_stocks": "C · Breakout on stocks", "D": "D · 12 minus 1 momentum", "E": "E · Earnings drift (PEAD)",
     "F": "F · Gross profitability",
     "B_dated": "B · dated universe", "C_stocks_dated": "C stocks · dated universe",
-    "D_dated": "D · dated universe", "E_dated": "E · dated universe", "F_dated": "F · dated universe",
+    "D_dated": "D · momentum, dated universe", "E_dated": "E · dated universe", "F_dated": "F · dated universe",
 }
-SLOT = {"A1": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6}
+SLOT = {"A1": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6, "D_dated": 7}
 
 METRICS = [  # (column, label, format)
     ("cagr", "CAGR after costs", "pct"), ("cagr_no_costs", "CAGR before costs", "pct"),
@@ -61,25 +61,41 @@ def _read(path) -> pd.DataFrame:
     return pd.read_csv(path) if path.exists() else pd.DataFrame()
 
 
-def _verdict(oos: pd.Series | None, hold: pd.Series | None) -> tuple[str, str]:
+def _beat(r) -> bool | None:
+    return None if r is None else bool(r["gap_cagr_vs_spy"] > 0 and r["gap_sharpe_vs_spy"] > 0)
+
+
+def _verdict(oos, hold, twin_oos=None, twin_hold=None) -> tuple[str, str]:
+    """Plain verdict. Walk forward = out of sample years; holdout = the locked last 2 years.
+    twin = the dated universe version of a stock strategy (a stock counts only after it joined)."""
     if oos is None:
         return "not run", "No walk forward result yet."
-    beat_oos = oos["gap_cagr_vs_spy"] > 0 and oos["gap_sharpe_vs_spy"] > 0
-    strong = np.isfinite(oos.get("dsr_own", np.nan)) and oos["dsr_own"] >= 0.95
-    why = [f"Out of sample it {'beat' if beat_oos else 'did not beat'} SPY after costs "
-           f"({oos['gap_cagr_vs_spy']:+.1%} a year, Sharpe {oos['sharpe']:.2f} vs {oos['spy_sharpe']:.2f})."]
-    why.append(f"Deflated Sharpe {oos['dsr_own']:.2f} (needs 0.95 to count as evidence)."
-               if np.isfinite(oos.get("dsr_own", np.nan)) else "")
+    o = _beat(oos)
+    h = None if hold is None else bool(hold["gap_cagr_vs_spy"] > 0)
+    why = [f"Walk forward 2016 to 2024: {oos['gap_cagr_vs_spy']:+.1%} a year vs SPY after costs, "
+           f"Sharpe {oos['sharpe']:.2f} vs {oos['spy_sharpe']:.2f}."]
     if hold is not None:
-        why.append(f"In the holdout it {'beat' if hold['gap_cagr_vs_spy'] > 0 else 'lagged'} SPY by "
-                   f"{abs(hold['gap_cagr_vs_spy']):.1%} a year.")
-    if beat_oos and strong and (hold is None or hold["gap_cagr_vs_spy"] > 0):
-        label = "holds up" if hold is not None else "promising, holdout not run"
-    elif beat_oos:
-        label = "weak: beat SPY but could be luck"
-    else:
-        label = "does not hold up"
-    return label, " ".join(w for w in why if w)
+        why.append(f"Holdout: {hold['gap_cagr_vs_spy']:+.1%} a year vs SPY.")
+    if np.isfinite(oos.get("dsr_own", np.nan)):
+        why.append(f"Deflated Sharpe {oos['dsr_own']:.2f} (0.95 needed).")
+    if "gap_cagr_vs_ew" in oos.index and pd.notna(oos.get("gap_cagr_vs_ew")):
+        why.append(f"Vs equal weight of the same stocks: {oos['gap_cagr_vs_ew']:+.1%} a year.")
+    if twin_oos is not None:
+        why.append(f"Dated version: {twin_oos['gap_cagr_vs_spy']:+.1%} walk forward"
+                   + (f", {twin_hold['gap_cagr_vs_spy']:+.1%} holdout." if twin_hold is not None else "."))
+    why = " ".join(why)
+    if not o and not h:
+        return "does not hold up", why
+    if hold is None:
+        return ("promising, holdout not run" if o else "does not hold up"), why
+    if o != h:
+        return "mixed", why
+    twin_ok = True if twin_oos is None else bool(_beat(twin_oos) and twin_hold is not None and twin_hold["gap_cagr_vs_spy"] > 0)
+    if not twin_ok:
+        return "mostly survivorship", why
+    strong = np.isfinite(oos.get("dsr_own", np.nan)) and oos["dsr_own"] >= 0.95
+    ew_ok = pd.isna(oos.get("gap_cagr_vs_ew", np.nan)) or oos["gap_cagr_vs_ew"] > 0
+    return ("holds up" if strong and ew_ok else "promising, not proven"), why
 
 
 def _curves(cfg: dict) -> tuple[pd.DataFrame, dict]:
@@ -134,16 +150,22 @@ def build_report(cfg: dict) -> str:
 
     # verdicts
     verdicts = {}
+    hold_of = lambda n: row(p5[p5["settings"] == "default"], n, "base") if not p5.empty else None  # noqa: E731
     for name in ORDER:
-        hold = row(p5[p5["settings"] == "default"], name, "base") if not p5.empty else None
-        verdicts[name] = _verdict(row(p4, name), hold)
+        twin = f"{name}_dated" if f"{name}_dated" in ORDER else None
+        verdicts[name] = _verdict(row(p4, name), hold_of(name),
+                                  row(p4, twin) if twin else None, hold_of(twin) if twin else None)
     winners = [n for n, (lab, _) in verdicts.items() if lab == "holds up"]
-    if not p4.empty and not winners:
-        headline = "None of these strategies beat buying SPY once costs, multiple testing and out of sample data are accounted for."
-    elif winners:
-        headline = f"{len(winners)} of {len(ORDER)} held up: {', '.join(winners)}. Read the caveats before trusting it."
-    else:
+    watch = [n for n, (lab, _) in verdicts.items() if lab in ("promising, not proven", "mixed", "mostly survivorship")]
+    if p4.empty:
         headline = "Walk forward results are not in yet."
+    elif winners:
+        headline = f"{len(winners)} of {len(ORDER)} versions held up: {', '.join(winners)}. Read the caveats before trusting it."
+    else:
+        headline = ("None of these strategies clearly beats buying SPY once costs, multiple testing, "
+                    "out of sample data and survivorship are accounted for.")
+        if watch:
+            headline += f" Mixed or unproven: {', '.join(watch)}. Everything else lost to SPY."
 
     # per strategy tables
     blocks = []
@@ -178,7 +200,7 @@ def build_report(cfg: dict) -> str:
                 picked = "<details><summary>Walk forward picks by year</summary><table class='mini'><tr><th>Year</th><th>Settings picked on earlier years</th><th>Return</th><th>SPY</th></tr>" + "".join(
                     f"<tr><td>{r.test_year}</td><td><code>{html.escape(str(r.picked))}</code></td><td>{_fmt(r.test_return, 'pct')}</td><td>{_fmt(r.spy_return, 'pct')}</td></tr>" for r in pk.itertuples()) + "</table></details>"
         surv = f"<p class='warn'>{SURVIVORSHIP_WARNING}</p>" if uses_single_stocks(params_for(cfg, name)) else ""
-        cls = "good" if lab == "holds up" else "bad" if lab == "does not hold up" else "mid"
+        cls = "good" if lab == "holds up" else "bad" if lab in ("does not hold up", "mostly survivorship") else "mid"
         blocks.append(f"""<section class='strat' id='s-{name}'>
 <h3>{html.escape(NAMES[name])} <span class='verdict {cls}'>{html.escape(lab)}</span></h3>
 <p>{html.escape(why)}</p>{surv}{flag_html}
@@ -241,18 +263,18 @@ TEMPLATE = """<!doctype html>
 :root {{ color-scheme: light;
   --surface-0:#f5f4f1; --surface-1:#fcfcfb; --border:#e3e2dd; --grid:#ecebe7;
   --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7a7974;
-  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --bench:#52514e;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --bench:#52514e;
   --band:#0b0b0b08; --band2:#2a78d610; --band3:#eb683414;
   --good:#0ca30c; --bad:#d03b3b; --mid:#b07a00; --warnbg:#fff6e5; --synthbg:#fde8e8; }}
 @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ color-scheme: dark;
   --surface-0:#121211; --surface-1:#1a1a19; --border:#33332f; --grid:#2a2a27;
   --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --bench:#c3c2b7;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --bench:#c3c2b7;
   --band:#ffffff08; --band2:#3987e518; --band3:#d9592620; --warnbg:#2e2615; --synthbg:#3a1c1c; }} }}
 :root[data-theme="dark"] {{ color-scheme: dark;
   --surface-0:#121211; --surface-1:#1a1a19; --border:#33332f; --grid:#2a2a27;
   --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --bench:#c3c2b7;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --bench:#c3c2b7;
   --band:#ffffff08; --band2:#3987e518; --band3:#d9592620; --warnbg:#2e2615; --synthbg:#3a1c1c; }}
 * {{ box-sizing:border-box; }}
 body {{ margin:0; background:var(--surface-0); color:var(--text-primary);
