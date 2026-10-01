@@ -219,6 +219,12 @@ def build_report(cfg: dict) -> str:
         slots=json.dumps(SLOT))
     out = rd / "report.html"
     out.write_text(page)
+    # Same page for publishing as a hosted artifact, which supplies its own
+    # outer html/head/body wrapper.
+    body = page.split("<body>", 1)[1].rsplit("</body>", 1)[0]
+    head = page.split("<head>", 1)[1].split("</head>", 1)[0]
+    head = "\n".join(line for line in head.splitlines() if not line.startswith("<meta"))
+    (rd / "report_page.html").write_text(head.replace('<meta charset="utf-8">', "") + "\n" + body)
     return str(out)
 
 
@@ -226,6 +232,8 @@ TEMPLATE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Strategy Backtest Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root {{ color-scheme: light;
   --surface-0:#f5f4f1; --surface-1:#fcfcfb; --border:#e3e2dd; --grid:#ecebe7;
@@ -245,7 +253,10 @@ TEMPLATE = """<!doctype html>
   --band:#ffffff08; --band2:#3987e518; --band3:#d9592620; --warnbg:#2e2615; --synthbg:#3a1c1c; }}
 * {{ box-sizing:border-box; }}
 body {{ margin:0; background:var(--surface-0); color:var(--text-primary);
-  font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }}
+  font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; }}
+h1, h2, h3 {{ text-wrap:balance; }}
+table, .tip, .years {{ font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace; }}
+:focus-visible {{ outline:2px solid var(--s1); outline-offset:2px; }}
 main {{ max-width:1080px; margin:0 auto; padding:24px 16px 64px; }}
 h1 {{ font-size:26px; margin:0 0 4px; }} h2 {{ font-size:19px; margin:36px 0 10px; }} h3 {{ font-size:16px; margin:0 0 6px; }}
 .lede {{ font-size:18px; margin:14px 0; }}
