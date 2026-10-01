@@ -16,7 +16,7 @@ import pandas as pd
 import requests
 
 from qm.config import data_dir
-from qm.data.quality import COLS, check_adjustments, check_prices, trim_leading_stale
+from qm.data.quality import COLS, check_adjustments, check_prices, stale_mask, trim_leading_stale
 from qm.data.skiplog import SkipLog
 
 Fetcher = Callable[[str, str], pd.DataFrame]
@@ -155,10 +155,8 @@ def build_panel(store: PriceStore, tickers: list[str], benchmark: str,
         df, filled, cut = trim_leading_stale(df, q["min_clean_run"])
         if cut:
             store.skiplog.log(t, "prices_trimmed", f"cut {cut} leading days of copied prices before real trading")
-        reason = None
-        if filled > q["max_internal_gaps"]:
-            reason = f"{filled} filled days (zero volume, copied close) inside real trading"
-        reason = reason or check_prices(df, cal, q)
+        df = df[~stale_mask(df)]  # copied days become missing days, never kept as prices
+        reason = check_prices(df, cal, q)  # counts missing days (copied or absent) as gaps
         if reason is None and audit is not None:
             reason = check_adjustments(df, audit.get(t), q)
         if reason:

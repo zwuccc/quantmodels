@@ -10,6 +10,10 @@ Target values:
 
 Long only, no leverage. If buys need more cash than there is, all buys that
 day are scaled down by the same factor. Sells happen before buys.
+
+A day with no price for a name: nothing is traded in it that day, a pending
+trade waits for the next real open, and the position is valued at its last
+real close. No price is ever made up for trading.
 """
 from __future__ import annotations
 
@@ -65,6 +69,7 @@ def run_backtest(open_: pd.DataFrame, close: pd.DataFrame, targets: pd.DataFrame
     invested = np.zeros(n)
     proceeds = np.zeros(n)
     entry_idx = np.full(n, -1)
+    carry = np.full(n, np.nan)
 
     eq = np.empty(n_days)
     traded = np.zeros(n_days)
@@ -83,28 +88,19 @@ def run_backtest(open_: pd.DataFrame, close: pd.DataFrame, targets: pd.DataFrame
         if i > 0:
             cash *= 1.0 + daily_cash
             o = O[i]
-            held = shares > 0
-            # data ended for a held name: close at its last close, and log it
-            gone = held & np.isnan(o) & np.isnan(C[i])
-            for j in np.where(gone)[0]:
-                value = shares[j] * last_px[j]
-                cost = value * cost_rate
-                cash += value - cost
-                proceeds[j] += value - cost
-                costs[i] += cost
-                shares[j] = 0.0
-                skipped.append((dates[i], tickers[j], "data ended while held, closed at last close"))
-                close_lot(j, i)
-
-            tgt = T[i - 1]
+            # a target that could not fill (no open price) waits for the next
+            # open with a real price, unless a newer target replaces it
+            tgt = np.where(np.isnan(T[i - 1]), carry, T[i - 1])
             act = ~np.isnan(tgt)
             if act.any():
                 px = np.where(np.isnan(o), last_px, o)
                 eq_open = cash + np.nansum(shares * px)
                 can = act & ~np.isnan(o)
+                carry[:] = np.nan
                 for j in np.where(act & np.isnan(o))[0]:
                     if tgt[j] > 0 or shares[j] > 0:
-                        skipped.append((dates[i], tickers[j], "no open price, trade skipped"))
+                        carry[j] = tgt[j]
+                        skipped.append((dates[i], tickers[j], "no open price, trade moved to the next open"))
                 delta = np.zeros(n)
                 delta[can] = tgt[can] * eq_open - shares[can] * o[can]
 

@@ -44,6 +44,7 @@ def test_fallback_then_skip_and_log(cfg):
 
 
 def test_gap_is_skipped_and_logged_never_filled(cfg):
+    cfg["data_quality"]["max_internal_gaps"] = 0
     good, gappy = ohlcv(), ohlcv(seed=1).drop(ohlcv().index[150])
     data = {"SPY": good, "AAA": good, "GAP": gappy}
     store = PriceStore(cfg, fetchers=[("fake", lambda t, s: data[t])], sleep=0)
@@ -150,3 +151,16 @@ def test_correct_special_dividend_adjustment_passes():
     unadj.iloc[150, unadj.columns.get_loc("dividends")] = 0.2 * unadj["close_raw"].iloc[149]
     assert check_adjustments(adj, unadj, Q) is None
     assert "no unadjusted" in check_adjustments(adj, None, Q)
+
+
+def test_a_few_copied_days_become_blanks_not_prices(cfg):
+    good = ohlcv()
+    copied = good.copy()
+    copied.iloc[150, copied.columns.get_loc("close")] = copied["close"].iloc[149]
+    copied.iloc[150, copied.columns.get_loc("volume")] = 0
+    data = {"SPY": good, "AAA": copied}
+    store = PriceStore(cfg, fetchers=[("fake", lambda t, s: data[t])], sleep=0)
+    for t in data:
+        store.get(t)
+    panel = build_panel(store, ["AAA"], "SPY")
+    assert np.isnan(panel["close"]["AAA"].iloc[150]) and panel["close"]["AAA"].notna().sum() == 299

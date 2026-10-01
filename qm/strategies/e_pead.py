@@ -49,7 +49,7 @@ def pead(md: MarketData, p: dict) -> pd.DataFrame:
     for i in range(len(cal)):
         row = np.full(n, np.nan)
         days[held] += 1
-        out = held & ((days >= p["hold"]) | np.isnan(c[i]))
+        out = held & (days >= p["hold"])  # engine waits for a real open if needed
         row[out] = 0.0
         held[out] = False
         if i in by_day:

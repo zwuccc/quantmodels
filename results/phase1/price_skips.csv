@@ -1,34 +1,17 @@
 time,name,stage,reason
-2026-09-26T14:40:48+00:00,XLRE,prices_trimmed,cut 74 leading days of copied prices before real trading
-2026-09-26T14:40:48+00:00,AMCR,prices_trimmed,cut 1778 leading days of copied prices before real trading
-2026-09-26T14:40:48+00:00,AMD,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:49+00:00,BIIB,prices_quality,"2 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:49+00:00,BKR,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:49+00:00,CCI,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:49+00:00,CHD,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:49+00:00,CHTR,prices_trimmed,cut 171 leading days of copied prices before real trading
-2026-09-26T14:40:50+00:00,DHR,prices_quality,broken adjustment on 2016-07-05: adjusted move +61% on a split or spin off day
-2026-09-26T14:40:50+00:00,DOC,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:50+00:00,DXCM,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:50+00:00,EXPE,prices_quality,broken adjustment on 2011-12-21: adjusted move -34% on a split or spin off day
-2026-09-26T14:40:50+00:00,FDXF,prices_quality,only 85 rows
-2026-09-26T14:40:50+00:00,FER,prices_trimmed,cut 2949 leading days of copied prices before real trading
-2026-09-26T14:40:50+00:00,FERG,prices_trimmed,cut 2811 leading days of copied prices before real trading
-2026-09-26T14:40:50+00:00,FISV,prices_quality,1 internal gap days
-2026-09-26T14:40:51+00:00,GEN,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:51+00:00,HONA,prices_quality,only 72 rows
-2026-09-26T14:40:51+00:00,HUBB,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:51+00:00,IBKR,prices_quality,"2 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:51+00:00,JCI,prices_quality,broken adjustment on 2007-07-02: adjusted move -53% on a split or spin off day
-2026-09-26T14:40:52+00:00,PFG,prices_quality,"2 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:53+00:00,Q,prices_quality,only 230 rows
-2026-09-26T14:40:53+00:00,SBAC,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:53+00:00,SPCX,prices_quality,only 73 rows
-2026-09-26T14:40:53+00:00,SW,prices_trimmed,cut 4040 leading days of copied prices before real trading
-2026-09-26T14:40:53+00:00,TPL,prices_quality,"4 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:54+00:00,VRT,prices_trimmed,cut 30 leading days of copied prices before real trading
-2026-09-26T14:40:54+00:00,VRT,prices_quality,"8 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:54+00:00,VRTX,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:54+00:00,VST,prices_trimmed,cut 37 leading days of copied prices before real trading
-2026-09-26T14:40:54+00:00,WTW,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
-2026-09-26T14:40:54+00:00,XEL,prices_quality,"1 filled days (zero volume, copied close) inside real trading"
+2026-10-01T03:58:57+00:00,XLRE,prices_trimmed,cut 74 leading days of copied prices before real trading
+2026-10-01T03:58:59+00:00,AMCR,prices_trimmed,cut 1778 leading days of copied prices before real trading
+2026-10-01T03:59:05+00:00,CHTR,prices_trimmed,cut 171 leading days of copied prices before real trading
+2026-10-01T03:59:08+00:00,DHR,prices_quality,broken adjustment on 2016-07-05: adjusted move +61% on a split or spin off day
+2026-10-01T03:59:10+00:00,EXPE,prices_quality,broken adjustment on 2011-12-21: adjusted move -34% on a split or spin off day
+2026-10-01T03:59:11+00:00,FDXF,prices_quality,only 85 rows
+2026-10-01T03:59:11+00:00,FER,prices_trimmed,cut 2949 leading days of copied prices before real trading
+2026-10-01T03:59:11+00:00,FERG,prices_trimmed,cut 2811 leading days of copied prices before real trading
+2026-10-01T03:59:13+00:00,HONA,prices_quality,only 72 rows
+2026-10-01T03:59:14+00:00,JCI,prices_quality,broken adjustment on 2007-07-02: adjusted move -53% on a split or spin off day
+2026-10-01T03:59:19+00:00,Q,prices_quality,only 230 rows
+2026-10-01T03:59:20+00:00,SPCX,prices_quality,only 73 rows
+2026-10-01T03:59:20+00:00,SW,prices_trimmed,cut 4040 leading days of copied prices before real trading
+2026-10-01T03:59:22+00:00,VRT,prices_trimmed,cut 30 leading days of copied prices before real trading
+2026-10-01T03:59:22+00:00,VRT,prices_quality,8 internal gap days
+2026-10-01T03:59:22+00:00,VST,prices_trimmed,cut 37 leading days of copied prices before real trading

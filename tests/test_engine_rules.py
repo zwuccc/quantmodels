@@ -50,13 +50,27 @@ def test_no_leverage_when_targets_exceed_cash():
     assert res.exposure.max() <= 1.0 + 1e-9
 
 
-def test_missing_open_skips_trade_and_logs():
+def test_missing_open_moves_trade_to_next_real_open():
     md = random_market()
     o = md.open.copy()
     o.iloc[11, o.columns.get_loc("AAA")] = np.nan
-    tgt = pd.DataFrame({"AAA": [0.5]}, index=[md.calendar[10]])
+    tgt = pd.DataFrame({"AAA": [0.5, 0.0]}, index=[md.calendar[10], md.calendar[40]])
     res = run_backtest(o, md.close, tgt, 0.0015)
-    assert len(res.trades) == 0 and res.skipped and "no open price" in res.skipped[0][2]
+    assert res.skipped and "no open price" in res.skipped[0][2]
+    t = res.trades.set_index("ticker")
+    assert t.loc["AAA", "entry_date"] == md.calendar[12]   # filled one day late, at a real price
+    assert t.loc["AAA", "exit_date"] == md.calendar[41]
+
+
+def test_missing_day_while_held_keeps_the_position():
+    md = random_market()
+    o, c = md.open.copy(), md.close.copy()
+    o.iloc[20, o.columns.get_loc("AAA")] = np.nan
+    c.iloc[20, c.columns.get_loc("AAA")] = np.nan
+    tgt = pd.DataFrame({"AAA": [0.5]}, index=[md.calendar[10]])
+    res = run_backtest(o, c, tgt, 0.0015)
+    assert len(res.trades) == 1 and res.trades["open"].iloc[0]   # still held at the end
+    assert res.exposure.iloc[20] > 0
 
 
 def test_buy_and_hold_benchmark_is_fully_invested_after_costs():

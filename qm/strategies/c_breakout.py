@@ -22,11 +22,9 @@ def breakout(md: MarketData, p: dict) -> pd.DataFrame:
     rows, idx = [], []
     for i in range(len(C)):
         row = np.full(n, np.nan)
-        gone = held & np.isnan(c[i])
-        with np.errstate(invalid="ignore"):
-            ex = held & ~gone & (c[i] < L[i])
+        with np.errstate(invalid="ignore"):  # a day with no price gives no signal
+            out = held & (c[i] < L[i])
             cand = ~held & (c[i] > H[i]) & (A[i] > 0)
-        out = ex | gone
         row[out] = 0.0
         held[out] = False
         size[out] = 0.0

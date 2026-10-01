@@ -24,9 +24,8 @@ def meanrev(md: MarketData, p: dict) -> pd.DataFrame:
     for i in range(len(C)):
         row = np.full(n, np.nan)
         days[held] += 1
-        gone = held & np.isnan(c[i])
-        ex = held & ~gone & ((c[i] > E[i]) | (days >= p["max_hold"]))
-        out = ex | gone
+        with np.errstate(invalid="ignore"):  # a day with no price gives no signal
+            out = held & ((c[i] > E[i]) | (days >= p["max_hold"]))
         row[out] = 0.0
         held[out] = False
         with np.errstate(invalid="ignore"):

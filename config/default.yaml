@@ -31,7 +31,8 @@ universe:
 
 data_quality:
   min_history_days: 260          # shorter series are skipped
-  max_internal_gaps: 0           # missing days inside a series; above this, skip
+  max_internal_gaps: 5           # missing or copied days inside real trading; above this, skip the name.
+                                 # Up to 5 are left blank: no trade that day, nothing made up (user decision)
   bad_jump: 0.5                  # one day move above this that reverses = bad data
   bad_jump_reversal: 0.3
   min_clean_run: 60              # real history starts at the first 60 days with no copied prices
