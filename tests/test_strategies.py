@@ -127,3 +127,21 @@ def test_planted_momentum_is_found(tmp_path):
     md = load_market(cfg)
     run = run_window(md, cfg, build_targets(md, params_for(cfg, "D")), "2006-01-01", "2015-12-31", ew_baseline=True)
     assert run["m_on"]["cagr"] > run["m_ew"]["cagr"] + 0.05
+
+
+def test_dated_universe_never_picks_a_stock_before_it_joined():
+    d = pd.bdate_range("2010-01-04", periods=400)
+    names = [f"S{i:02d}" for i in range(30)]
+    drift = np.linspace(-0.001, 0.002, 30)
+    md = random_market(n_days=400)
+    md.close = pd.DataFrame(100 * np.exp(np.outer(np.arange(400), drift)), index=d, columns=names)
+    joined = pd.Timestamp("2011-03-01")  # the three strongest names join late
+    md.universe = pd.DataFrame({"ticker": names, "sector": "Tech", "kind": "stock",
+                                "added": [joined if n in ("S27", "S28", "S29") else pd.Timestamp("2000-01-01") for n in names]})
+    p = {"kind": "momentum", "lookback": 252, "skip": 21, "top_frac": 0.10, "min_names": 20}
+    plain = build_targets(md, p)
+    dated = build_targets(md, {**p, "dated_universe": True})
+    early = dated[dated.index < joined]
+    assert (early[["S27", "S28", "S29"]] == 0).all().all()
+    assert (plain.loc[plain.index < joined, "S29"] > 0).any()     # the plain version did pick it
+    assert (dated.loc[dated.index >= joined, "S29"] > 0).any()    # and the dated one does after it joins

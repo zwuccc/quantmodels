@@ -140,6 +140,18 @@ strategies:
     max_staleness_days: 450
     gpa_bounds: [-1.0, 3.0]      # outside this is a unit or tagging error (99% of real values are below 1.2)
 
+  # Survivorship check: same rules, but a stock counts only from the day it
+  # joined the S&P 500 (Wikipedia "Date added"). Nasdaq only names are left out.
+  B_dated: {kind: meanrev, universe: stocks, dated_universe: true, rsi_len: 2, rsi_entry: 10,
+            trend_sma: 200, exit_sma: 5, max_hold: 10, slots: 10}
+  C_stocks_dated: {kind: breakout, universe: stocks, dated_universe: true, entry: 55, exit: 20,
+                   atr: 20, risk_per_trade: 0.01, max_weight: 0.20}
+  D_dated: {kind: momentum, universe: stocks, dated_universe: true, lookback: 252, skip: 21, top_frac: 0.10}
+  E_dated: {kind: pead, universe: stocks, dated_universe: true, n_surprises: 8, hold: 60, top_frac: 0.10,
+            rank_window_days: 365, min_rank_pool: 50, max_positions: 50, min_sue_sd: 0.01, max_abs_sue: 50}
+  F_dated: {kind: grossprof, universe: stocks, dated_universe: true, top_frac: 0.20,
+            max_staleness_days: 450, gpa_bounds: [-1.0, 3.0]}
+
 # Phase 4 grids: each lookback moved 20% down and up.
 grids:
   A1: {sma: [160, 200, 240], check: [daily, monthly]}
@@ -151,3 +163,8 @@ grids:
   D: {lookback: [202, 252, 302], skip: [17, 21, 25]}
   E: {hold: [48, 60, 72], n_surprises: [6, 8, 10]}
   F: {top_frac: [0.16, 0.20, 0.24]}
+  B_dated: {trend_sma: [160, 200, 240], exit_sma: [4, 5, 6], max_hold: [8, 10, 12]}
+  C_stocks_dated: {entry: [44, 55, 66], exit: [16, 20, 24]}
+  D_dated: {lookback: [202, 252, 302], skip: [17, 21, 25]}
+  E_dated: {hold: [48, 60, 72], n_surprises: [6, 8, 10]}
+  F_dated: {top_frac: [0.16, 0.20, 0.24]}

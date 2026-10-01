@@ -7,7 +7,7 @@ import pandas as pd
 
 from qm.data.fundamentals import annual_gross_profitability
 from qm.data.market import MarketData
-from qm.strategies.indicators import month_start
+from qm.strategies.indicators import eligibility, month_start
 
 
 def grossprof(md: MarketData, p: dict) -> pd.DataFrame:
@@ -30,10 +30,11 @@ def grossprof(md: MarketData, p: dict) -> pd.DataFrame:
         m["ticker"] = t
         parts.append(m)
     wide = pd.concat(parts).pivot(index="date", columns="ticker", values="gpa").reindex(index=dates, columns=names)
+    el = eligibility(md, names, p)
     rows, idx = [], []
     for d in dates:
         v = wide.loc[d]
-        v = v[v.notna() & C.loc[d].notna()]
+        v = v[v.notna() & C.loc[d].notna() & el.loc[d, v.index]]
         if len(v) < p.get("min_names", 20):
             continue
         k = int(np.ceil(p["top_frac"] * len(v)))

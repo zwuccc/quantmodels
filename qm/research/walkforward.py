@@ -89,7 +89,7 @@ def run_walkforward(cfg: dict, names: list[str] | None = None) -> pd.DataFrame:
             if best is None:
                 continue
             p = params_for(cfg, name, combos[best])
-            test = run_window(md, cfg, targets[best], w["test_start"], w["test_end"], uses_single_stocks(p))
+            test = run_window(md, cfg, targets[best], w["test_start"], w["test_end"], p if uses_single_stocks(p) else False)
             if not test:
                 continue
             log_run(log, "phase4", name, p, f"wf_test_{w['label']}", test)

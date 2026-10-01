@@ -22,12 +22,15 @@ from qm.research.common import (ORDER, SURVIVORSHIP_WARNING, SYNTHETIC_WARNING, 
 from qm.strategies import build_targets, uses_single_stocks
 
 MAIN = ["A1", "B", "C", "D", "E", "F"]          # one line each on the main chart
-VARIANTS = {"A2": "A1", "A3": "A1", "C_stocks": "C"}  # small multiples, family color
+VARIANTS = {"A2": "A1", "A3": "A1", "C_stocks": "C", "B_dated": "B", "C_stocks_dated": "C",
+            "D_dated": "D", "E_dated": "E", "F_dated": "F"}  # small multiples, family color
 NAMES = {
     "A1": "A1 · 200 day trend (SPY/IEF)", "A2": "A2 · 50/200 cross (SPY/IEF)",
     "A3": "A3 · Multi asset trend", "B": "B · RSI(2) mean reversion", "C": "C · Breakout on ETFs",
     "C_stocks": "C · Breakout on stocks", "D": "D · 12 minus 1 momentum", "E": "E · Earnings drift (PEAD)",
     "F": "F · Gross profitability",
+    "B_dated": "B · dated universe", "C_stocks_dated": "C stocks · dated universe",
+    "D_dated": "D · dated universe", "E_dated": "E · dated universe", "F_dated": "F · dated universe",
 }
 SLOT = {"A1": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6}
 

@@ -1,0 +1,194 @@
+{
+ "A1": {
+  "default": {
+   "kind": "trend_sma",
+   "universe": "etf",
+   "asset": "SPY",
+   "safe": "IEF",
+   "sma": 200,
+   "check": "daily"
+  },
+  "wf_pick": {
+   "kind": "trend_sma",
+   "universe": "etf",
+   "asset": "SPY",
+   "safe": "IEF",
+   "sma": 160,
+   "check": "monthly"
+  }
+ },
+ "A2": {
+  "default": {
+   "kind": "trend_cross",
+   "universe": "etf",
+   "asset": "SPY",
+   "safe": "IEF",
+   "fast": 50,
+   "slow": 200
+  },
+  "wf_pick": {
+   "kind": "trend_cross",
+   "universe": "etf",
+   "asset": "SPY",
+   "safe": "IEF",
+   "fast": 40,
+   "slow": 160
+  }
+ },
+ "A3": {
+  "default": {
+   "kind": "trend_multi",
+   "universe": "etf",
+   "assets": [
+    "SPY",
+    "EFA",
+    "EEM",
+    "VNQ",
+    "GLD",
+    "DBC"
+   ],
+   "safe": "IEF",
+   "sma": 200
+  },
+  "wf_pick": {
+   "kind": "trend_multi",
+   "universe": "etf",
+   "assets": [
+    "SPY",
+    "EFA",
+    "EEM",
+    "VNQ",
+    "GLD",
+    "DBC"
+   ],
+   "safe": "IEF",
+   "sma": 160
+  }
+ },
+ "B": {
+  "default": {
+   "kind": "meanrev",
+   "universe": "stocks",
+   "rsi_len": 2,
+   "rsi_entry": 10,
+   "trend_sma": 200,
+   "exit_sma": 5,
+   "max_hold": 10,
+   "slots": 10
+  },
+  "wf_pick": {
+   "kind": "meanrev",
+   "universe": "stocks",
+   "rsi_len": 2,
+   "rsi_entry": 10,
+   "trend_sma": 200,
+   "exit_sma": 6,
+   "max_hold": 10,
+   "slots": 10
+  }
+ },
+ "C": {
+  "default": {
+   "kind": "breakout",
+   "universe": "etf",
+   "entry": 55,
+   "exit": 20,
+   "atr": 20,
+   "risk_per_trade": 0.01,
+   "max_weight": 0.2
+  },
+  "wf_pick": {
+   "kind": "breakout",
+   "universe": "etf",
+   "entry": 66,
+   "exit": 24,
+   "atr": 20,
+   "risk_per_trade": 0.01,
+   "max_weight": 0.2
+  }
+ },
+ "C_stocks": {
+  "default": {
+   "kind": "breakout",
+   "universe": "stocks",
+   "entry": 55,
+   "exit": 20,
+   "atr": 20,
+   "risk_per_trade": 0.01,
+   "max_weight": 0.2
+  },
+  "wf_pick": {
+   "kind": "breakout",
+   "universe": "stocks",
+   "entry": 55,
+   "exit": 24,
+   "atr": 20,
+   "risk_per_trade": 0.01,
+   "max_weight": 0.2
+  }
+ },
+ "D": {
+  "default": {
+   "kind": "momentum",
+   "universe": "stocks",
+   "lookback": 252,
+   "skip": 21,
+   "top_frac": 0.1
+  },
+  "wf_pick": {
+   "kind": "momentum",
+   "universe": "stocks",
+   "lookback": 202,
+   "skip": 17,
+   "top_frac": 0.1
+  }
+ },
+ "E": {
+  "default": {
+   "kind": "pead",
+   "universe": "stocks",
+   "n_surprises": 8,
+   "hold": 60,
+   "top_frac": 0.1,
+   "rank_window_days": 365,
+   "min_rank_pool": 50,
+   "max_positions": 50,
+   "min_sue_sd": 0.01,
+   "max_abs_sue": 50
+  },
+  "wf_pick": {
+   "kind": "pead",
+   "universe": "stocks",
+   "n_surprises": 8,
+   "hold": 72,
+   "top_frac": 0.1,
+   "rank_window_days": 365,
+   "min_rank_pool": 50,
+   "max_positions": 50,
+   "min_sue_sd": 0.01,
+   "max_abs_sue": 50
+  }
+ },
+ "F": {
+  "default": {
+   "kind": "grossprof",
+   "universe": "stocks",
+   "top_frac": 0.2,
+   "max_staleness_days": 450,
+   "gpa_bounds": [
+    -1.0,
+    3.0
+   ]
+  },
+  "wf_pick": {
+   "kind": "grossprof",
+   "universe": "stocks",
+   "top_frac": 0.24,
+   "max_staleness_days": 450,
+   "gpa_bounds": [
+    -1.0,
+    3.0
+   ]
+  }
+ }
+}

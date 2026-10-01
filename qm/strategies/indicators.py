@@ -42,3 +42,11 @@ def month_start(index: pd.DatetimeIndex) -> np.ndarray:
     out = np.zeros(len(index), dtype=bool)
     out[1:] = m[1:] != m[:-1]
     return out
+
+
+def eligibility(md, names: list[str], p: dict) -> pd.DataFrame:
+    """Which names a strategy may pick each day. With dated_universe, a stock
+    counts only from its S&P 500 join date; otherwise every name always counts."""
+    if not p.get("dated_universe"):
+        return pd.DataFrame(True, index=md.calendar, columns=names)
+    return md.eligible(names)

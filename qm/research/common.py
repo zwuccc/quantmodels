@@ -28,7 +28,8 @@ SYNTHETIC_WARNING = (
     "SYNTHETIC DATA: these numbers come from random fake prices, not real markets. "
     "They only show that the pipeline runs. They say nothing about any strategy.")
 
-ORDER = ["A1", "A2", "A3", "B", "C", "C_stocks", "D", "E", "F"]
+ORDER = ["A1", "A2", "A3", "B", "B_dated", "C", "C_stocks", "C_stocks_dated",
+         "D", "D_dated", "E", "E_dated", "F", "F_dated"]
 
 
 # ---- loading ---------------------------------------------------------------
@@ -95,7 +96,7 @@ def seeded(targets: pd.DataFrame, start: pd.Timestamp, calendar: pd.DatetimeInde
     return after
 
 
-def equal_weight_targets(md: MarketData) -> pd.DataFrame:
+def equal_weight_targets(md: MarketData, p: dict | None = None) -> pd.DataFrame:
     """Every stock in the universe, equal weight, rebalanced on the first trading
     day of each month. A second baseline for stock strategies: it shows how much
     return comes from just owning today's survivors, before any signal."""
@@ -104,11 +105,13 @@ def equal_weight_targets(md: MarketData) -> pd.DataFrame:
     C = md.close[names]
     rows = C[month_start(C.index)]
     valid = rows.notna()
+    if p and p.get("dated_universe"):  # same membership rule as the strategy it is compared with
+        valid &= md.eligible(names).loc[rows.index]
     return valid.div(valid.sum(axis=1), axis=0).where(valid, 0.0)
 
 
 def run_window(md: MarketData, cfg: dict, targets: pd.DataFrame, start, end,
-               ew_baseline: bool = False) -> dict:
+               ew_baseline: bool | dict = False) -> dict:
     """Strategy (costs on and off) and SPY buy and hold over the same dates.
     With ew_baseline, also the equal weight stock universe over the same dates."""
     start, end = pd.Timestamp(start), pd.Timestamp(end)
@@ -128,7 +131,8 @@ def run_window(md: MarketData, cfg: dict, targets: pd.DataFrame, start, end,
     out = {"on": on, "off": off, "bench": bench,
            "m_on": summarize(on, rf), "m_off": summarize(off, rf), "m_bench": summarize(bench, rf)}
     if ew_baseline:
-        ew_t = seeded(equal_weight_targets(md.clip(end)), active, md.calendar)
+        ew_t = seeded(equal_weight_targets(md.clip(end), ew_baseline if isinstance(ew_baseline, dict) else None),
+                      active, md.calendar)
         out["ew"] = run_backtest(md.open, md.close, ew_t[ew_t.index >= active], cost_rate(cfg), **kw)
         out["m_ew"] = summarize(out["ew"], rf)
     return out

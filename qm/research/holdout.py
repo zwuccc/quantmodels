@@ -40,7 +40,7 @@ def run_holdout(cfg: dict, confirm: bool) -> pd.DataFrame:
                 continue
             seen.add(key)
             tg = build_targets(md, p)
-            run = run_window(md, cfg, tg, splits.holdout_start, splits.snapshot_end, uses_single_stocks(p))
+            run = run_window(md, cfg, tg, splits.holdout_start, splits.snapshot_end, p if uses_single_stocks(p) else False)
             if not run:
                 print(f"{name} ({label}): no trades in the holdout")
                 continue

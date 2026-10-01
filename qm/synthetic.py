@@ -93,7 +93,10 @@ def generate(cfg: dict, n_stocks: int = 120, seed: int = 7, end: str = "2026-09-
         if k % 10 == 3:  # some names list later
             df = df[df.index >= "2012-06-01"]
         frames[t] = df
-        uni.append({"ticker": t, "sector": sector, "source": "synthetic", "kind": "stock"})
+        # most names joined the index long ago; about 3 in 10 join at a random later date
+        added = (pd.Timestamp("1995-01-01") if rng.random() < 0.7
+                 else pd.Timestamp(rng.choice(dates[: len(dates) * 3 // 4])))
+        uni.append({"ticker": t, "sector": sector, "source": "synthetic", "kind": "stock", "added": added})
         facts = _facts(rng, t, 2009, dates[-1], has_cogs=(k % 7 != 0))
         rows.append(extract_rows(facts, t, cfg))
     out = data_dir(cfg) / "processed"

@@ -28,7 +28,7 @@ def run_insample(cfg: dict, names: list[str] | None = None) -> pd.DataFrame:
         except LookAheadError as e:
             leak = f"FAIL: {e}"
         tg = fn(view)
-        run = run_window(view, cfg, tg, splits.data_start, splits.insample_end, uses_single_stocks(p))
+        run = run_window(view, cfg, tg, splits.data_start, splits.insample_end, p if uses_single_stocks(p) else False)
         if not run:
             print(f"{name}: no trades in sample (not enough data)")
             continue

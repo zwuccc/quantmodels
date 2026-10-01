@@ -33,5 +33,15 @@ class MarketData:
         names = u.loc[u["kind"] == ("stock" if kind == "stocks" else kind), "ticker"]
         return [t for t in names if t in self.close.columns]
 
+    def eligible(self, names: list[str]) -> pd.DataFrame:
+        """True from the day each stock joined the S&P 500 (Wikipedia's "Date added").
+        Unknown join date means never eligible. Removes the "future index
+        additions" part of survivorship bias, not the deleted companies."""
+        u = self.universe.set_index("ticker")
+        added = pd.to_datetime(u["added"], errors="coerce") if "added" in u else pd.Series(pd.NaT, index=u.index)
+        cal = self.calendar.to_numpy()[:, None]
+        add = added.reindex(names).to_numpy("datetime64[ns]")[None, :]
+        return pd.DataFrame(cal >= add, index=self.calendar, columns=names)
+
     def sector(self) -> pd.Series:
         return self.universe.set_index("ticker")["sector"]

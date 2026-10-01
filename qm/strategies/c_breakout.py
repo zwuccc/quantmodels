@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from qm.data.market import MarketData
-from qm.strategies.indicators import atr, prior_high, prior_low
+from qm.strategies.indicators import atr, eligibility, prior_high, prior_low
 
 
 def breakout(md: MarketData, p: dict) -> pd.DataFrame:
@@ -16,6 +16,7 @@ def breakout(md: MarketData, p: dict) -> pd.DataFrame:
     L = prior_low(md.low[names], p["exit"]).to_numpy()
     A = atr(md.high[names], md.low[names], C, p["atr"]).to_numpy()
     c = C.to_numpy()
+    el = eligibility(md, names, p).to_numpy()
     n = len(names)
     held = np.zeros(n, bool)
     size = np.zeros(n)
@@ -24,7 +25,7 @@ def breakout(md: MarketData, p: dict) -> pd.DataFrame:
         row = np.full(n, np.nan)
         with np.errstate(invalid="ignore"):  # a day with no price gives no signal
             out = held & (c[i] < L[i])
-            cand = ~held & (c[i] > H[i]) & (A[i] > 0)
+            cand = ~held & el[i] & (c[i] > H[i]) & (A[i] > 0)
         row[out] = 0.0
         held[out] = False
         size[out] = 0.0

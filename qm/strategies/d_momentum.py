@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from qm.data.market import MarketData
-from qm.strategies.indicators import month_start
+from qm.strategies.indicators import eligibility, month_start
 
 
 def momentum(md: MarketData, p: dict) -> pd.DataFrame:
@@ -15,10 +15,11 @@ def momentum(md: MarketData, p: dict) -> pd.DataFrame:
     C = md.close[names]
     mom = C.shift(p["skip"]) / C.shift(p["lookback"]) - 1
     rebal = month_start(C.index)
+    el = eligibility(md, names, p)
     rows, idx = [], []
     for i in np.where(rebal)[0]:
         m = mom.iloc[i]
-        m = m[m.notna() & C.iloc[i].notna()]
+        m = m[m.notna() & C.iloc[i].notna() & el.iloc[i]]
         if len(m) < p.get("min_names", 20):
             continue
         k = int(np.ceil(p["top_frac"] * len(m)))

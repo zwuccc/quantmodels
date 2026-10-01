@@ -38,6 +38,8 @@ def _find_table(html: str, symbol_cols: tuple[str, ...]) -> pd.DataFrame:
                               or next((cols[c] for c in cols if "Industry" in c), None))  # Nasdaq list uses ICB
                 out = pd.DataFrame({"ticker": t[cols[sc]].astype(str).str.strip()})
                 out["sector"] = t[sector_col].astype(str) if sector_col is not None else ""
+                added = next((cols[c] for c in cols if c.startswith("Date added")), None)
+                out["added"] = pd.to_datetime(t[added], errors="coerce") if added is not None else pd.NaT
                 return out
     raise ValueError("no constituent table found")
 
@@ -66,7 +68,8 @@ def build_universe(cfg: dict, refresh: bool = False) -> pd.DataFrame:
 
     stocks["ticker"] = stocks["ticker"].map(normalize)
     stocks = (stocks.groupby("ticker", as_index=False)
-              .agg(sector=("sector", "first"), source=("source", lambda s: "+".join(sorted(set(s))))))
+              .agg(sector=("sector", "first"), added=("added", "first"),
+                   source=("source", lambda s: "+".join(sorted(set(s))))))
     stocks["kind"] = "stock"
     etfs = pd.DataFrame({"ticker": cfg["universe"]["etfs"], "sector": "ETF", "source": "etf", "kind": "etf"})
     stocks = stocks[~stocks["ticker"].isin(etfs["ticker"])]
