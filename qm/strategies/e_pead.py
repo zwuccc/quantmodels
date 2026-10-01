@@ -22,8 +22,8 @@ def pead(md: MarketData, p: dict) -> pd.DataFrame:
         return empty
 
     # top slice cutoff from SUEs filed in the trailing window only (no future SUEs)
-    win = pd.Timedelta(days=p["rank_window_days"])
-    filed = ev["filed"].to_numpy()
+    win = np.timedelta64(p["rank_window_days"], "D")
+    filed = ev["filed"].to_numpy("datetime64[ns]")
     sue = ev["sue"].to_numpy()
     top = np.zeros(len(ev), bool)
     for k in range(len(ev)):
@@ -34,7 +34,7 @@ def pead(md: MarketData, p: dict) -> pd.DataFrame:
             top[k] = sue[k] >= np.quantile(pool, 1 - p["top_frac"])
     ev = ev[top].copy()
     # signal day: first trading day on or after the filed date; fill is the next open
-    pos = np.searchsorted(cal.to_numpy(), ev["filed"].to_numpy(), side="left")
+    pos = np.searchsorted(cal.to_numpy("datetime64[ns]"), ev["filed"].to_numpy("datetime64[ns]"), side="left")
     ev = ev[pos < len(cal)]
     ev["i"] = pos[pos < len(cal)]
     by_day = {i: g.sort_values("sue", ascending=False) for i, g in ev.groupby("i")}

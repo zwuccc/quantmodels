@@ -44,6 +44,8 @@ def load_market(cfg: dict) -> MarketData:
         raise FileNotFoundError("price panel not built yet. Run: python -m qm panel "
                                 "(after universe and prices), or python -m qm synthetic")
     px = {f: pd.read_parquet(panel_path(cfg, f)) for f in fields}
+    for df in px.values():
+        df.index = df.index.astype("datetime64[ns]")
     uni = pd.read_csv(data_dir(cfg) / "processed" / "tickers.csv")
     return MarketData(**px, fundamentals=load_fundamentals(cfg), universe=uni)
 

@@ -115,7 +115,10 @@ def load_fundamentals(cfg: dict) -> Fundamentals:
     p = pit_path(cfg)
     if not p.exists():
         return Fundamentals(pd.DataFrame(columns=PIT_COLS))
-    return Fundamentals(pd.read_parquet(p))
+    t = pd.read_parquet(p)
+    for c in ("start", "end", "filed"):  # one date precision everywhere, or merges refuse to match
+        t[c] = t[c].astype("datetime64[ns]")
+    return Fundamentals(t)
 
 
 # ---- signal inputs built from the PIT table -------------------------------
