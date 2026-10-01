@@ -109,3 +109,46 @@ def test_row_filed_before_its_period_ended_is_dropped(cfg):
 def test_gross_profitability_outside_bounds_is_dropped(fund):
     assert len(annual_gross_profitability(fund, (-1.0, 3.0))) == 1
     assert annual_gross_profitability(fund, (-1.0, 0.1)).empty   # 0.2 is outside
+
+
+def _quarters(late_end=None, late_filed=None):
+    rows = []
+    for i, y in enumerate(range(2010, 2016)):
+        for q, (s, e) in enumerate([("01-01", "03-31"), ("04-01", "06-30"), ("07-01", "09-30"), ("10-01", "12-31")]):
+            end = pd.Timestamp(f"{y}-{e}")
+            filed = end + pd.Timedelta(days=40)
+            if late_end is not None and end == pd.Timestamp(late_end):
+                filed = pd.Timestamp(late_filed)  # first reported much later, as a comparative
+            rows.append({"ticker": "XYZ", "concept": "eps", "tag": "t", "start": pd.Timestamp(f"{y}-{s}"), "end": end,
+                         "days": 90, "period": "Q", "value": 1.0 + 0.1 * i + 0.03 * ((i * 4 + q) % 3),
+                         "form": "10-Q", "accn": "", "filed": filed, "derived": False})
+    return Fundamentals(pd.DataFrame(rows))
+
+
+def test_sue_old_quarter_reported_late_does_not_change_earlier_events():
+    # Real bug (TPR 2012): a quarter first reported in a later filing made the
+    # full history skip an event that was visible at the time.
+    f = _quarters(late_end="2011-06-30", late_filed="2014-03-01")
+    ev = sue_events(f, 8)
+    for cut in ["2013-02-15", "2013-08-15", "2014-02-15"]:
+        part = sue_events(f.clip(cut), 8)
+        full = ev[ev["filed"] <= cut].reset_index(drop=True)
+        pd.testing.assert_frame_equal(full, part.reset_index(drop=True), check_dtype=False)
+
+
+def test_gross_profit_tag_filed_later_does_not_hide_earlier_version(cfg):
+    # Real bug (AXON 2013): GrossProfit first filed later than revenue and cost.
+    early = {"start": "2012-01-01", "end": "2012-12-31", "form": "10-K", "filed": "2013-02-20", "accn": "k12"}
+    late = {**early, "filed": "2014-02-20", "accn": "k13"}
+    facts = {"facts": {"us-gaap": {
+        "Revenues": {"units": {"USD": [{**early, "val": 1000.0}]}},
+        "CostOfRevenue": {"units": {"USD": [{**early, "val": 600.0}]}},
+        "GrossProfit": {"units": {"USD": [{**late, "val": 400.0}]}},
+        "Assets": {"units": {"USD": [{"end": "2012-12-31", "val": 2000.0, "form": "10-K", "filed": "2013-02-20", "accn": "k12"}]}},
+    }}}
+    f = Fundamentals(build_pit(extract_rows(facts, "XYZ", cfg), cfg))
+    cut = pd.Timestamp("2013-06-30")
+    full = annual_gross_profitability(f)
+    part = annual_gross_profitability(f.clip(cut))
+    pd.testing.assert_frame_equal(full[full["filed"] <= cut].reset_index(drop=True), part.reset_index(drop=True), check_dtype=False)
+    assert len(part) == 1 and part["filed"].iloc[0] == pd.Timestamp("2013-02-20")

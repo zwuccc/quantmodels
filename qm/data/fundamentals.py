@@ -131,36 +131,44 @@ def sue_events(fund: Fundamentals, n_surprises: int, min_sd: float = 0.0) -> pd.
     The event date is when both EPS values were public (the later filed date).
     min_sd floors the standard deviation: EPS is reported to the cent, so a
     spread below a cent is rounding noise, not a real baseline.
+    Point in time: each event only uses surprises that were public by its own
+    date. Companies sometimes report an old quarter for the first time in a
+    later filing; that quarter must not change an earlier event. Where two
+    rows could serve, the earliest filed one is used, so loading later
+    filings never changes an earlier result.
     """
     t = fund.table
-    q = t[(t["concept"] == "eps") & (t["period"] == "Q")].sort_values(["ticker", "end"])
+    q = t[(t["concept"] == "eps") & (t["period"] == "Q")].sort_values(["ticker", "end", "filed"], kind="stable")
+    day = np.timedelta64(1, "D")
     out = []
     for tk, g in q.groupby("ticker"):
-        g = g.drop_duplicates("end", keep="first")
-        ends = g["end"].to_numpy()
-        vals, filed = g["value"].to_numpy(), g["filed"].to_numpy()
-        surprises = []  # (end, avail, surprise)
+        g = g.drop_duplicates("end", keep="first")  # earliest filed value for each quarter
+        ends = g["end"].to_numpy("datetime64[ns]")
+        vals, filed = g["value"].to_numpy(), g["filed"].to_numpy("datetime64[ns]")
+        sur_end, sur_avail, sur_val = [], [], []
         for i in range(len(g)):
-            target = ends[i] - np.timedelta64(365, "D")
-            j = np.where(np.abs((ends - target) / np.timedelta64(1, "D")) <= 20)[0]
-            j = j[j < i]
+            target = ends[i] - 365 * day
+            j = np.where((np.abs((ends - target) / day) <= 20) & (ends < ends[i]))[0]
             if len(j) == 0:
                 continue
-            j = j[-1]
-            surprises.append((ends[i], max(filed[i], filed[j]), vals[i] - vals[j]))
-        for k in range(n_surprises, len(surprises)):
-            end, avail, s = surprises[k]
-            prev = surprises[k - n_surprises:k]
-            span = (end - prev[0][0]) / np.timedelta64(1, "D")
-            if span > (n_surprises + 1) * 95:
-                continue  # gap in the history, not n consecutive quarters
-            if any(p[1] > avail for p in prev):
+            j = j[np.argmin(filed[j])]  # earliest filed match
+            sur_end.append(ends[i])
+            sur_avail.append(max(filed[i], filed[j]))
+            sur_val.append(vals[i] - vals[j])
+        sur_end, sur_avail, sur_val = np.array(sur_end), np.array(sur_avail), np.array(sur_val)
+        for k in range(len(sur_end)):
+            known = np.where((sur_end < sur_end[k]) & (sur_avail <= sur_avail[k]))[0]
+            if len(known) < n_surprises:
                 continue
-            sd = np.std([p[2] for p in prev], ddof=1)
+            prev = known[np.argsort(sur_end[known], kind="stable")][-n_surprises:]
+            if (sur_end[k] - sur_end[prev[0]]) / day > (n_surprises + 1) * 95:
+                continue  # gap in the history, not n consecutive quarters
+            sd = np.std(sur_val[prev], ddof=1)
             if not np.isfinite(sd) or sd <= 0:
                 continue
             sd = max(sd, min_sd)
-            out.append({"ticker": tk, "end": pd.Timestamp(end), "filed": pd.Timestamp(avail), "sue": s / sd})
+            out.append({"ticker": tk, "end": pd.Timestamp(sur_end[k]), "filed": pd.Timestamp(sur_avail[k]),
+                        "sue": sur_val[k] / sd})
     return pd.DataFrame(out, columns=["ticker", "end", "filed", "sue"])
 
 
@@ -178,10 +186,14 @@ def annual_gross_profitability(fund: Fundamentals, bounds: tuple[float, float] |
     rev = ann[ann["concept"] == "revenue"][key + ["value", "filed"]].rename(columns={"value": "rev", "filed": "f_rev"})
     cogs = ann[ann["concept"] == "cogs"][key + ["value", "filed"]].rename(columns={"value": "cogs", "filed": "f_cogs"})
     gp = ann[ann["concept"] == "gross_profit"][key + ["value", "filed"]].rename(columns={"value": "gp", "filed": "f_gp"})
-    m = rev.merge(cogs, on=key, how="outer").merge(gp, on=key, how="outer")
-    m["gross"] = m["gp"].where(m["gp"].notna(), m["rev"] - m["cogs"])
-    m["f_gross"] = m["f_gp"].where(m["gp"].notna(), m[["f_rev", "f_cogs"]].max(axis=1))
-    m = m.dropna(subset=["gross"])
+    # Two ways to get gross profit, each dated by its own filings. Both are kept:
+    # if the GrossProfit tag is first filed later than revenue and cost, the
+    # earlier revenue minus cost version was what a trader could see at first.
+    rc = rev.merge(cogs, on=key, how="inner")
+    rc["gross"] = rc["rev"] - rc["cogs"]
+    rc["f_gross"] = rc[["f_rev", "f_cogs"]].max(axis=1)
+    gp = gp.rename(columns={"gp": "gross", "f_gp": "f_gross"})
+    m = pd.concat([rc[key + ["gross", "f_gross"]], gp[key + ["gross", "f_gross"]]], ignore_index=True)
     a = inst[["ticker", "end", "value", "filed"]].rename(columns={"value": "assets", "filed": "f_assets"})
     m = m.merge(a, on=["ticker", "end"], how="inner")
     m = m[m["assets"] > 0]
@@ -189,4 +201,7 @@ def annual_gross_profitability(fund: Fundamentals, bounds: tuple[float, float] |
     m["gpa"] = m["gross"] / m["assets"]
     if bounds is not None:
         m = m[m["gpa"].between(*bounds)]
-    return m[["ticker", "end", "filed", "gpa"]].sort_values(["ticker", "filed"]).reset_index(drop=True)
+    m = m.sort_values(["ticker", "filed", "end"], kind="stable")
+    # at most one row per company per filing date: the newest period, GrossProfit tag preferred
+    m = m.drop_duplicates(["ticker", "filed"], keep="last")
+    return m[["ticker", "end", "filed", "gpa"]].reset_index(drop=True)
