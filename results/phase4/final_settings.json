@@ -87,6 +87,30 @@
    "slots": 10
   }
  },
+ "B_dated": {
+  "default": {
+   "kind": "meanrev",
+   "universe": "stocks",
+   "dated_universe": true,
+   "rsi_len": 2,
+   "rsi_entry": 10,
+   "trend_sma": 200,
+   "exit_sma": 5,
+   "max_hold": 10,
+   "slots": 10
+  },
+  "wf_pick": {
+   "kind": "meanrev",
+   "universe": "stocks",
+   "dated_universe": true,
+   "rsi_len": 2,
+   "rsi_entry": 10,
+   "trend_sma": 200,
+   "exit_sma": 6,
+   "max_hold": 10,
+   "slots": 10
+  }
+ },
  "C": {
   "default": {
    "kind": "breakout",
@@ -127,6 +151,28 @@
    "max_weight": 0.2
   }
  },
+ "C_stocks_dated": {
+  "default": {
+   "kind": "breakout",
+   "universe": "stocks",
+   "dated_universe": true,
+   "entry": 55,
+   "exit": 20,
+   "atr": 20,
+   "risk_per_trade": 0.01,
+   "max_weight": 0.2
+  },
+  "wf_pick": {
+   "kind": "breakout",
+   "universe": "stocks",
+   "dated_universe": true,
+   "entry": 55,
+   "exit": 20,
+   "atr": 20,
+   "risk_per_trade": 0.01,
+   "max_weight": 0.2
+  }
+ },
  "D": {
   "default": {
    "kind": "momentum",
@@ -140,6 +186,24 @@
    "universe": "stocks",
    "lookback": 202,
    "skip": 17,
+   "top_frac": 0.1
+  }
+ },
+ "D_dated": {
+  "default": {
+   "kind": "momentum",
+   "universe": "stocks",
+   "dated_universe": true,
+   "lookback": 252,
+   "skip": 21,
+   "top_frac": 0.1
+  },
+  "wf_pick": {
+   "kind": "momentum",
+   "universe": "stocks",
+   "dated_universe": true,
+   "lookback": 202,
+   "skip": 25,
    "top_frac": 0.1
   }
  },
@@ -169,6 +233,34 @@
    "max_abs_sue": 50
   }
  },
+ "E_dated": {
+  "default": {
+   "kind": "pead",
+   "universe": "stocks",
+   "dated_universe": true,
+   "n_surprises": 8,
+   "hold": 60,
+   "top_frac": 0.1,
+   "rank_window_days": 365,
+   "min_rank_pool": 50,
+   "max_positions": 50,
+   "min_sue_sd": 0.01,
+   "max_abs_sue": 50
+  },
+  "wf_pick": {
+   "kind": "pead",
+   "universe": "stocks",
+   "dated_universe": true,
+   "n_surprises": 8,
+   "hold": 72,
+   "top_frac": 0.1,
+   "rank_window_days": 365,
+   "min_rank_pool": 50,
+   "max_positions": 50,
+   "min_sue_sd": 0.01,
+   "max_abs_sue": 50
+  }
+ },
  "F": {
   "default": {
    "kind": "grossprof",
@@ -183,6 +275,30 @@
   "wf_pick": {
    "kind": "grossprof",
    "universe": "stocks",
+   "top_frac": 0.24,
+   "max_staleness_days": 450,
+   "gpa_bounds": [
+    -1.0,
+    3.0
+   ]
+  }
+ },
+ "F_dated": {
+  "default": {
+   "kind": "grossprof",
+   "universe": "stocks",
+   "dated_universe": true,
+   "top_frac": 0.2,
+   "max_staleness_days": 450,
+   "gpa_bounds": [
+    -1.0,
+    3.0
+   ]
+  },
+  "wf_pick": {
+   "kind": "grossprof",
+   "universe": "stocks",
+   "dated_universe": true,
    "top_frac": 0.24,
    "max_staleness_days": 450,
    "gpa_bounds": [

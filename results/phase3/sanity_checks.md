@@ -18,3 +18,13 @@ Conclusion: not a bug. A small in sample edge over random picks, on survivor dat
 
 ## Survivorship, measured
 Equal weight of today's members, 2005 to 2015: 15.0% a year vs SPY 7.6%.
+
+## F_dated flagged: win rate 78% (limit 70%)
+Same cause as F: a bull market, ~1 year holds, survivor stocks. The F placebo above
+(random picks win 75% to 83%) covers it. Not a bug.
+
+## Phase 4 survivorship check (dated universe)
+A stock counts only from its S&P 500 join date (Wikipedia "Date added"; 293 of 503
+members joined after 2005). Walk forward gap vs SPY, plain -> dated:
+D +12.0% -> +1.0%, F +3.5% -> +2.0%, E -4.7% -> -5.9%, C_stocks -4.3% -> -9.5%,
+B -8.2% -> -12.8%. Most of D's apparent edge was holding stocks before they joined.
